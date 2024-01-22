@@ -6,14 +6,18 @@ FROM python:3.8.6
 COPY requirements.txt /opt/app/requirements.txt
 RUN pip install --upgrade pip && pip install -r /opt/app/requirements.txt
 
-RUN jupyter nbextension install --py --sys-prefix graph_notebook.widgets
-RUN jupyter nbextension enable  --py --sys-prefix graph_notebook.widgets
+RUN apt-get update && apt-get install -y dos2unix
+
+RUN jupyter nbextension install --py widgetsnbextension --user
+RUN jupyter nbextension enable widgetsnbextension --user --py
 RUN python -m graph_notebook.static_resources.install && python -m graph_notebook.nbextensions.install
 
 RUN mkdir -p /opt/app/notebook/data && groupadd --system --gid=1000 app\
     && useradd --system --no-log-init --gid app --uid=1000 app -m
 
+
 COPY entrypoint.sh /opt/app/entrypoint.sh
+
 COPY notebooks /opt/app/notebook/notebooks
 
 RUN python -m graph_notebook.notebooks.install --destination /opt/app/notebook
@@ -31,6 +35,8 @@ EXPOSE 8888
 WORKDIR /opt/app/notebook
 
 USER app
+
+RUN dos2unix /opt/app/entrypoint.sh
 
 ENTRYPOINT ["/opt/app/entrypoint.sh"]
 
